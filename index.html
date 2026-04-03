@@ -128,8 +128,7 @@ select{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radi
     <div class="search-drop" id="searchDrop"></div>
   </div>
   <div class="sheet-url-wrap">
-    <input class="sheet-input" id="sheetUrl" type="text" placeholder="Google Sheets CSV URL 입력 후 시트 연동 클릭">
-    <button class="sheet-btn" onclick="loadSheet()">시트 연동</button>
+    <button class="sheet-btn" id="syncBtn" onclick="syncSheet()">&#x21BB; 시트 동기화</button>
   </div>
 </div>
 
@@ -260,13 +259,7 @@ function showTab(name,el){
   el.classList.add('active');
 }
 
-function loadSheet(){
-  const url=document.getElementById('sheetUrl').value.trim();
-  if(!url){alert('URL을 입력해주세요.');return;}
-  fetch(url).then(r=>{if(!r.ok)throw new Error('URL 오류');return r.text();})
-    .then(csv=>{DATA=parseCSV(csv);init();document.getElementById('lastSync').textContent='시트 동기화: '+new Date().toLocaleString('ko-KR');})
-    .catch(e=>alert('불러오기 실패: '+e.message));
-}
+
 function parseCSV(text){
   const lines=text.trim().split('
 ');
@@ -436,12 +429,56 @@ function fillSelects(){
   });
 }
 
-function init(){
+
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxX77laHBvcJF2EaRHo1YckgWuH47s65G03vPM3ksEBPXJE5cqHi3E-7TZZaDWWEA/exec';
+
+function init(useEmbedded) {
   fillSelects();renderBanner();renderOverview();
   renderDeptTbl();renderReplaceTbl();renderShared();renderRentalTbl();renderAlerts();
   document.getElementById('lastSync').textContent='내장 데이터 기준: 2026-03-30';
 }
-init();
+
+function syncSheet() {
+  const btn = document.getElementById('syncBtn');
+  btn.textContent='불러오는 중...';
+  btn.disabled=true;
+  fetch(APPS_SCRIPT_URL)
+    .then(r=>r.json())
+    .then(rows=>{
+      DATA=rows.map(r=>{
+        const obj={};
+        Object.keys(r).forEach(k=>obj[k]=String(r[k]??''));
+        return obj;
+      });
+      init();
+      document.getElementById('lastSync').textContent='시트 동기화: '+new Date().toLocaleString('ko-KR');
+      btn.textContent='시트 동기화';
+      btn.disabled=false;
+    })
+    .catch(e=>{
+      alert('동기화 실패: '+e.message);
+      btn.textContent='시트 동기화';
+      btn.disabled=false;
+    });
+}
+
+// 자동으로 시트 데이터 불러오기
+fetch(APPS_SCRIPT_URL)
+  .then(r=>r.json())
+  .then(rows=>{
+    DATA=rows.map(r=>{
+      const obj={};
+      Object.keys(r).forEach(k=>obj[k]=String(r[k]??''));
+      return obj;
+    });
+    init();
+    document.getElementById('lastSync').textContent='시트 자동 동기화: '+new Date().toLocaleString('ko-KR');
+  })
+  .catch(()=>{
+    init();
+    document.getElementById('lastSync').textContent='내장 데이터 기준: 2026-03-30 (시트 연결 실패)';
+  });
+
 </script>
 </body>
 </html>
