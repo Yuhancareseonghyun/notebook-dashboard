@@ -281,10 +281,22 @@ let yChartInst=null;
 let exportRows=[];
 
 // ── 유틸 ──
+function fmtDate(d){
+  if(!d||d==='')return '-';
+  var dt=new Date(d);
+  if(isNaN(dt.getTime()))return '-';
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');
+}
+function fmtDateFull(d){
+  if(!d||d==='')return '-';
+  var dt=new Date(d);
+  if(isNaN(dt.getTime()))return '-';
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
 function age(d){
-  if(!d)return null;
-  const dt=new Date(d);
-  if(isNaN(dt))return null;
+  if(!d||d==='')return null;
+  var dt=new Date(d);
+  if(isNaN(dt.getTime()))return null;
   return Math.floor((TODAY-dt)/365.25/24/3600/1000*10)/10;
 }
 function isShared(r){
@@ -297,7 +309,7 @@ function priOf(v){
   if(v>=RY-2)return{l:'2년 내 교체',c:'bk-green',k:'ok'};
   return{l:'여유 있음',c:'bk-blue',k:'new'};
 }
-function dday(d){if(!d)return null;return Math.round((new Date(d)-TODAY)/86400000);}
+function dday(d){if(!d||d==='')return null;var dt=new Date(d);if(isNaN(dt.getTime()))return null;return Math.round((dt-TODAY)/86400000);}
 function sb(s){
   const m={'재직':'bk-green','휴직':'bk-pink','퇴직':'bk-gray','비대상':'bk-purple','휴직예정(5월~)':'bk-pink','퇴직예정(~6/30)':'bk-red'};
   return s?'<span class="badge '+(m[s]||'bk-purple')+'">'+s+'</span>':'-';
@@ -365,7 +377,7 @@ function showPerson(no){
   document.getElementById('srGrid').innerHTML=
     '<div class="sr-item"><div class="sr-label">모델명</div><div class="sr-value" style="font-size:11px">'+(r['모델명']||'-')+'</div></div>'+
     '<div class="sr-item"><div class="sr-label">관리번호</div><div class="sr-value">'+(r['관리번호']||'-')+'</div></div>'+
-    '<div class="sr-item"><div class="sr-label">취득연월</div><div class="sr-value">'+(r['취득연월']?r['취득연월'].slice(0,7):(r['렌탈개시일']?'렌탈 '+r['렌탈개시일'].slice(0,7):'-'))+'</div></div>'+
+    '<div class="sr-item"><div class="sr-label">취득연월</div><div class="sr-value">'+(r['취득연월']?fmtDate(r['취득연월']):(r['렌탈개시일']?'렌탈 '+r['렌탈개시일'].slice(0,7):'-'))+'</div></div>'+
     '<div class="sr-item"><div class="sr-label">경과/교체</div><div class="sr-value"><span class="badge '+p.c+'">'+(v!==null?v.toFixed(1)+'년 · ':'')+p.l+'</span></div></div>'+
     '<div class="sr-item"><div class="sr-label">보관장소</div><div class="sr-value">'+(r['보관장소']||'-')+'</div></div>'+
     '<div class="sr-item"><div class="sr-label">자산번호</div><div class="sr-value">'+(r['자산번호']||'-')+'</div></div>';
@@ -373,7 +385,7 @@ function showPerson(no){
   if(r['이전사용자']){
     document.getElementById('srHistFlow').innerHTML=
       '<div class="hist-chip" style="background:var(--gray-bg);color:var(--gray)">'+(r['이전사용자부서']||'')+' · '+r['이전사용자']+'</div>'+
-      '<span style="color:var(--text3)">→ '+(r['이관사유']||'이관')+(r['이관일']?' ('+r['이관일'].slice(0,10)+')':'')+'</span>'+
+      '<span style="color:var(--text3)">→ '+(r['이관사유']||'이관')+(r['이관일']?' ('+fmtDateFull(r['이관일'])+')':'')+'</span>'+
       '<div class="hist-chip" style="background:var(--blue-bg);color:var(--blue-dark)">'+r['부서']+' · '+r['사용자']+' (현재)</div>';
     hist.style.display='block';
   } else hist.style.display='none';
@@ -448,7 +460,7 @@ function renderOverview(){
         '<td style="padding:8px 10px;border-bottom:1px solid #f0ede8">'+r['부서']+'</td>'+
         '<td style="padding:8px 10px;border-bottom:1px solid #f0ede8;font-weight:500">'+r['사용자']+'</td>'+
         '<td style="padding:8px 10px;border-bottom:1px solid #f0ede8;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+( r['모델명']||'-')+'</td>'+
-        '<td style="padding:8px 10px;border-bottom:1px solid #f0ede8">'+(r['취득연월']?r['취득연월'].slice(0,7):'-')+'</td>'+
+        '<td style="padding:8px 10px;border-bottom:1px solid #f0ede8">'+(r['취득연월']?fmtDate(r['취득연월']):'-')+'</td>'+
         '<td style="padding:8px 10px;border-bottom:1px solid #f0ede8;font-weight:500">'+(v!==null?v.toFixed(1)+'년':'-')+'</td>'+
         '<td style="padding:8px 10px;border-bottom:1px solid #f0ede8"><span class="badge '+p.c+'">'+p.l+'</span></td>'+
         '</tr>';
@@ -473,7 +485,7 @@ function renderDept(){
     return '<tr><td>'+(i+1)+'</td><td>'+r['부서']+'</td><td>'+r['사용자']+'</td><td>'+sb(r['재직상황'])+'</td>'+
       '<td><span class="badge '+(r['유형']==='렌탈'?'bk-pink':'bk-blue')+'">'+(r['유형']||'-')+'</span></td>'+
       '<td>'+(r['제조사']||'-')+'</td><td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(r['모델명']||'-')+'</td>'+
-      '<td>'+(r['관리번호']||'-')+'</td><td>'+(r['취득연월']?r['취득연월'].slice(0,7):'-')+'</td>'+
+      '<td>'+(r['관리번호']||'-')+'</td><td>'+(r['취득연월']?fmtDate(r['취득연월']):'-')+'</td>'+
       '<td>'+(v!==null?v.toFixed(1)+'년':'-')+'</td><td>'+(r['보관장소']||'-')+'</td></tr>';
   }).join(''):mt();
 }
@@ -497,7 +509,7 @@ function renderReplace(){
   document.getElementById('rep-tbody').innerHTML=rows.length?rows.map(function(r,i){
     return '<tr><td>'+(i+1)+'</td><td>'+r['부서']+'</td><td>'+r['사용자']+'</td><td>'+sb(r['재직상황'])+'</td>'+
       '<td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(r['모델명']||'-')+'</td>'+
-      '<td>'+(r['관리번호']||'-')+'</td><td>'+(r['취득연월']?r['취득연월'].slice(0,7):'-')+'</td>'+
+      '<td>'+(r['관리번호']||'-')+'</td><td>'+(r['취득연월']?fmtDate(r['취득연월']):'-')+'</td>'+
       '<td>'+(r._y!==null?r._y.toFixed(1)+'년':'-')+'</td>'+
       '<td><span class="badge '+r._p.c+'">'+r._p.l+'</span></td></tr>';
   }).join(''):mt();
@@ -517,7 +529,7 @@ function renderShared(){
     return '<tr><td>'+(i+1)+'</td><td><span class="badge bk-purple">'+r['부서']+'</span></td><td>'+r['사용자']+'</td>'+
       '<td><span class="badge '+(r['유형']==='렌탈'?'bk-pink':'bk-blue')+'">'+(r['유형']||'-')+'</span></td>'+
       '<td>'+(r['모델명']||'-')+'</td><td>'+(r['관리번호']||'-')+'</td>'+
-      '<td>'+(r['취득연월']?r['취득연월'].slice(0,7):'-')+'</td>'+
+      '<td>'+(r['취득연월']?fmtDate(r['취득연월']):'-')+'</td>'+
       '<td>'+(v!==null?v.toFixed(1)+'년':'-')+'</td><td>'+(r['이관사유']||'-')+'</td></tr>';
   }).join(''):mt();
 }
@@ -540,8 +552,8 @@ function renderRental(){
     var db=d!==null?(d<=90?'<span class="badge bk-red">D-'+d+'</span>':d<=180?'<span class="badge bk-amber">D-'+d+'</span>':'<span class="badge bk-green">D-'+d+'</span>'):'';
     return '<tr><td>'+(i+1)+'</td><td>'+r['부서']+'</td><td>'+r['사용자']+'</td><td>'+sb(r['재직상황'])+'</td>'+
       '<td>'+(r['제조사']||'-')+'</td><td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(r['모델명']||'-')+'</td>'+
-      '<td>'+(r['관리번호']||'-')+'</td><td>'+(r['렌탈개시일']?r['렌탈개시일'].slice(0,7):'-')+'</td>'+
-      '<td>'+(r['렌탈종료일']?r['렌탈종료일'].slice(0,10):'-')+'</td><td>'+db+'</td>'+
+      '<td>'+(r['관리번호']||'-')+'</td><td>'+(r['렌탈개시일']?fmtDate(r['렌탈개시일']):'-')+'</td>'+
+      '<td>'+(r['렌탈종료일']?fmtDateFull(r['렌탈종료일']):'-')+'</td><td>'+db+'</td>'+
       '<td>'+(r['렌탈료_월']?Number(r['렌탈료_월']).toLocaleString()+'원':'-')+'</td></tr>';
   }).join(''):mt();
 }
@@ -567,7 +579,7 @@ function renderAlerts(){
   }).join(''):mt('현재 휴직자 없음');
   document.getElementById('al-rental').innerHTML=re.length?re.map(function(r){
     var d=dday(r['렌탈종료일']);
-    return '<div class="ai ai-blue"><div class="ai-title">'+r['부서']+' · '+r['사용자']+' <span class="badge '+(d<=90?'bk-red':'bk-amber')+'" style="margin-left:8px">D-'+d+'</span></div><div class="ai-sub">종료일: '+(r['렌탈종료일']||'-')+' | '+(r['렌탈료_월']?Number(r['렌탈료_월']).toLocaleString()+'원/월':'-')+'</div></div>';
+    return '<div class="ai ai-blue"><div class="ai-title">'+r['부서']+' · '+r['사용자']+' <span class="badge '+(d<=90?'bk-red':'bk-amber')+'" style="margin-left:8px">D-'+d+'</span></div><div class="ai-sub">종료일: '+(fmtDateFull(r['렌탈종료일']))+' | '+(r['렌탈료_월']?Number(r['렌탈료_월']).toLocaleString()+'원/월':'-')+'</div></div>';
   }).join(''):mt('6개월 내 종료 없음');
 }
 
